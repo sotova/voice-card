@@ -91,7 +91,7 @@
       align-items: center;
       justify-content: center;
       pointer-events: none;
-      padding: 40px 28px;
+      padding: 40px 28px 92px;
       z-index: 1;
     }
     #display-text p {
@@ -103,7 +103,6 @@
       word-break: break-word;
       white-space: pre-wrap;
       text-align: center;
-      transition: font-size 0.12s ease-out;
       width: 100%;
     }
 
@@ -131,17 +130,34 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      opacity: 0;
+      opacity: 1;
       border: none;
       outline: none;
       background: transparent;
-      font-size: 16px; /* prevents iOS zoom */
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      caret-color: transparent;
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      text-align: center;
       resize: none;
       cursor: text;
       z-index: 2;
       -webkit-appearance: none;
-      padding: 40px 28px;
+      padding: 40px 28px 92px;
       font-family: "Noto Sans JP", sans-serif;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    #caret-marker {
+      position: absolute;
+      display: none;
+      width: 2px;
+      background: #1c1c1c;
+      pointer-events: none;
+      z-index: 4;
     }
 
     /* Swipe hint label */
@@ -207,9 +223,8 @@
     /* ── HISTORY BUTTON ── */
     #history-btn {
       position: fixed;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
+      left: max(12px, env(safe-area-inset-left));
+      top: max(12px, env(safe-area-inset-top));
       width: 44px;
       height: 44px;
       border-radius: 16px;
@@ -226,7 +241,70 @@
       transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     #history-btn:active {
-      transform: translateY(-50%) scale(0.92);
+      transform: scale(0.92);
+    }
+
+    #text-controls {
+      position: fixed;
+      left: 50%;
+      bottom: max(20px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: min(320px, calc(100vw - 120px));
+      min-width: 190px;
+      padding: 10px 12px;
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,.94);
+      box-shadow: 0 2px 10px rgba(0,0,0,.1);
+      z-index: 20;
+      font-family: "Noto Sans JP", sans-serif;
+    }
+    #font-size-slider {
+      flex: 1;
+      min-width: 0;
+      accent-color: #424242;
+    }
+    #font-size-value {
+      min-width: 36px;
+      color: #616161;
+      font-size: 11px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    #auto-size-btn, #theme-btn {
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      background: #f5f5f5;
+      color: #424242;
+      cursor: pointer;
+      font-family: "Noto Sans JP", sans-serif;
+    }
+    #auto-size-btn {
+      min-width: 48px;
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+    #auto-size-btn.active {
+      background: #424242;
+      border-color: #424242;
+      color: #fff;
+    }
+    #theme-btn {
+      position: fixed;
+      right: max(12px, env(safe-area-inset-right));
+      top: max(12px, env(safe-area-inset-top));
+      display: flex;
+      width: 44px;
+      height: 44px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 1px 4px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.08);
+      z-index: 20;
     }
 
     #history-badge {
@@ -436,6 +514,84 @@
       background: #eee;
       color: #757575;
     }
+
+    body[data-theme="dark"], body[data-theme="dark"] #app {
+      background: #121212;
+    }
+    body[data-theme="dark"] #card {
+      background: #1e1e1e;
+      box-shadow: 0 1px 3px rgba(0,0,0,.35), 0 4px 16px rgba(0,0,0,.25);
+    }
+    body[data-theme="dark"] #display-text p,
+    body[data-theme="dark"] #card-hint span,
+    body[data-theme="dark"] #drawer-title,
+    body[data-theme="dark"] .hist-item-main {
+      color: #f2f2f2;
+    }
+    body[data-theme="dark"] #input-area {
+      caret-color: transparent;
+    }
+    body[data-theme="dark"] #caret-marker {
+      background: #f2f2f2;
+    }
+    body[data-theme="dark"] #history-btn,
+    body[data-theme="dark"] #theme-btn,
+    body[data-theme="dark"] #text-controls {
+      background: rgba(42,42,42,.96);
+      border-color: #444;
+      color: #eee;
+    }
+    body[data-theme="dark"] #history-btn svg,
+    body[data-theme="dark"] #drawer-title-group svg {
+      filter: invert(1);
+    }
+    body[data-theme="dark"] #auto-size-btn {
+      background: #333;
+      border-color: #555;
+      color: #eee;
+    }
+    body[data-theme="dark"] #auto-size-btn.active {
+      background: #eee;
+      border-color: #eee;
+      color: #222;
+    }
+    body[data-theme="dark"] #font-size-value,
+    body[data-theme="dark"] #clear-all-btn {
+      color: #aaa;
+    }
+    body[data-theme="dark"] #drawer {
+      background: #202020;
+    }
+    body[data-theme="dark"] #drawer-header {
+      border-bottom-color: #3a3a3a;
+    }
+    body[data-theme="dark"] #drawer-count-badge,
+    body[data-theme="dark"] #close-drawer-btn {
+      background: #383838;
+      color: #ddd;
+    }
+    body[data-theme="dark"] .hist-item {
+      background: #292929;
+      border-color: #3c3c3c;
+    }
+    body[data-theme="dark"] .hist-item:active,
+    body[data-theme="dark"] .hist-delete-btn:active {
+      background: #404040;
+    }
+    body[data-theme="dark"] .hist-item-time,
+    body[data-theme="dark"] .hist-delete-btn {
+      color: #aaa;
+    }
+    body[data-theme="dark"] #drawer-empty span,
+    body[data-theme="dark"] #placeholder span {
+      color: #858585;
+    }
+    @media (max-height: 420px) {
+      #text-controls { bottom: max(8px, env(safe-area-inset-bottom)); }
+      #history-btn, #theme-btn {
+        top: max(8px, env(safe-area-inset-top));
+      }
+    }
   </style>
 </head>
 <body>
@@ -486,6 +642,18 @@
     <span id="history-badge"></span>
   </button>
 
+  <button id="theme-btn" aria-label="ダークモードに切り替え" title="テーマ切替">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <div id="text-controls" aria-label="文字サイズ調整">
+    <button id="auto-size-btn" class="active" type="button" aria-pressed="true">自動</button>
+    <input id="font-size-slider" type="range" min="16" max="80" value="80" aria-label="文字サイズ" />
+    <output id="font-size-value" for="font-size-slider">自動</output>
+  </div>
+
   <!-- Drawer backdrop -->
   <div id="drawer-backdrop"></div>
 
@@ -505,7 +673,7 @@
         <button id="clear-all-btn">全消し</button>
         <button id="close-drawer-btn" aria-label="閉じる">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M18 6L6 18M6 6l12 12" stroke="#3d3d3d" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
           </svg>
         </button>
       </div>
@@ -531,10 +699,12 @@
    STATE
 ═══════════════════════════════════════ */
 const STORAGE_KEY = 'voice-card-history';
+const THEME_STORAGE_KEY = 'voice-card-theme';
 const MAX_HISTORY = 20;
 
 let history = loadHistory();
-let isFocused = false;
+let automaticFontSize = true;
+let fixedFontSize = 80;
 
 /* ═══════════════════════════════════════
    ELEMENTS
@@ -554,6 +724,19 @@ const clearBtn    = document.getElementById('clear-all-btn');
 const closeBtn    = document.getElementById('close-drawer-btn');
 const drawerList  = document.getElementById('drawer-list');
 const emptyState  = document.getElementById('drawer-empty');
+const displayArea = document.getElementById('display-area');
+const fontSlider  = document.getElementById('font-size-slider');
+const fontValue   = document.getElementById('font-size-value');
+const autoSizeBtn = document.getElementById('auto-size-btn');
+const themeBtn    = document.getElementById('theme-btn');
+
+const caretMarker = document.createElement('div');
+caretMarker.id = 'caret-marker';
+caretMarker.setAttribute('aria-hidden', 'true');
+displayArea.appendChild(caretMarker);
+const caretMirror = document.createElement('div');
+caretMirror.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;';
+displayArea.appendChild(caretMirror);
 
 /* ═══════════════════════════════════════
    STORAGE
@@ -582,25 +765,44 @@ function pushHistory(text) {
 const probe = document.createElement('div');
 probe.style.cssText = `
   position:absolute; visibility:hidden; pointer-events:none;
-  white-space:pre-wrap; word-break:break-word;
+  white-space:pre; word-break:break-word;
   font-family:"Noto Sans JP",sans-serif; font-weight:900;
-  line-height:1.2; padding:0;
+  line-height:1.2; letter-spacing:-0.01em; padding:0; width:max-content;
 `;
 document.body.appendChild(probe);
 
 function fitFontSize(text) {
-  const card = document.getElementById('card');
-  const aw = card.clientWidth  - 56;
-  const ah = card.clientHeight - 80;
-  if (!text.trim()) return 80;
+  const aw = Math.max(40, displayArea.clientWidth - 56);
+  const ah = Math.max(40, displayArea.clientHeight - 132);
+  if (!text.trim()) return fixedFontSize;
 
-  probe.style.width = aw + 'px';
-  let lo = 14, hi = 80, best = 14;
+  probe.style.width = 'max-content';
+  probe.style.whiteSpace = 'pre';
+  let lo = 16, hi = 80, best = 16;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
     probe.style.fontSize = mid + 'px';
     probe.textContent = text;
-    if (probe.scrollHeight <= ah && probe.scrollWidth <= aw + 4) {
+    if (!text.includes('\n') && probe.getBoundingClientRect().width <= aw) {
+      best = mid; lo = mid + 1;
+    } else { hi = mid - 1; }
+  }
+  if (best >= 16 && !text.includes('\n')) {
+    probe.style.fontSize = '16px';
+    probe.textContent = text;
+    if (probe.getBoundingClientRect().width <= aw) return best;
+  }
+
+  probe.style.width = aw + 'px';
+  probe.style.whiteSpace = 'pre-wrap';
+  lo = 16;
+  hi = 80;
+  best = 16;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    probe.style.fontSize = mid + 'px';
+    probe.textContent = text;
+    if (probe.scrollHeight <= ah) {
       best = mid; lo = mid + 1;
     } else { hi = mid - 1; }
   }
@@ -618,16 +820,116 @@ function updateDisplay() {
   displayP.parentElement.style.display = empty ? 'none' : 'flex';
   cardHint.classList.toggle('visible', !empty);
 
-  if (!empty) {
-    const fs = fitFontSize(text);
-    displayP.style.fontSize = fs + 'px';
-    displayP.textContent = text;
+  const fs = automaticFontSize ? fitFontSize(text) : fixedFontSize;
+  displayP.style.fontSize = fs + 'px';
+  displayP.textContent = text;
+  input.style.fontSize = fs + 'px';
+
+  probe.style.width = Math.max(40, displayArea.clientWidth - 56) + 'px';
+  probe.style.whiteSpace = 'pre-wrap';
+  probe.style.fontSize = fs + 'px';
+  probe.textContent = text || ' ';
+  const contentHeight = probe.getBoundingClientRect().height;
+  const availableHeight = Math.max(40, displayArea.clientHeight - 132);
+  const topPadding = 40 + Math.max(0, (availableHeight - contentHeight) / 2);
+  input.style.paddingTop = topPadding + 'px';
+  input.style.paddingBottom = Math.max(92, displayArea.clientHeight - topPadding - contentHeight) + 'px';
+
+  fontSlider.value = String(fixedFontSize);
+  fontValue.textContent = automaticFontSize ? '自動' : `${fixedFontSize}px`;
+  autoSizeBtn.classList.toggle('active', automaticFontSize);
+  autoSizeBtn.setAttribute('aria-pressed', String(automaticFontSize));
+  updateCaret();
+}
+
+function updateCaret() {
+  if (document.activeElement !== input || input.selectionStart !== input.selectionEnd) {
+    caretMarker.style.display = 'none';
+    return;
   }
+
+  const styles = getComputedStyle(input);
+  const areaRect = displayArea.getBoundingClientRect();
+  caretMirror.style.left = input.offsetLeft + 'px';
+  caretMirror.style.top = input.offsetTop + 'px';
+  caretMirror.style.width = input.clientWidth + 'px';
+  caretMirror.style.boxSizing = 'border-box';
+  caretMirror.style.padding = styles.padding;
+  caretMirror.style.font = styles.font;
+  caretMirror.style.letterSpacing = styles.letterSpacing;
+  caretMirror.style.textAlign = styles.textAlign;
+  caretMirror.style.lineHeight = styles.lineHeight;
+  caretMirror.style.whiteSpace = 'pre-wrap';
+  caretMirror.style.wordBreak = styles.wordBreak;
+  caretMirror.style.overflowWrap = styles.overflowWrap;
+
+  caretMirror.textContent = '';
+  caretMirror.appendChild(document.createTextNode(input.value.slice(0, input.selectionStart)));
+  const marker = document.createElement('span');
+  marker.textContent = '\u200b';
+  marker.style.cssText = 'display:inline-block;width:0;height:1em;line-height:1em;vertical-align:baseline;';
+  caretMirror.appendChild(marker);
+  caretMirror.appendChild(document.createTextNode(input.value.slice(input.selectionEnd)));
+
+  const markerRect = marker.getBoundingClientRect();
+  caretMarker.style.left = markerRect.left - areaRect.left - input.scrollLeft + 'px';
+  caretMarker.style.top = markerRect.top - areaRect.top - input.scrollTop + 'px';
+  caretMarker.style.height = markerRect.height ? markerRect.height + 'px' : parseFloat(styles.lineHeight) + 'px';
+  caretMarker.style.display = 'block';
 }
 
 input.addEventListener('input', updateDisplay);
-input.addEventListener('focus', () => { isFocused = true; });
-input.addEventListener('blur',  () => { isFocused = false; });
+input.addEventListener('focus', updateCaret);
+input.addEventListener('blur', () => { caretMarker.style.display = 'none'; });
+input.addEventListener('keyup', updateCaret);
+input.addEventListener('click', updateCaret);
+input.addEventListener('select', updateCaret);
+input.addEventListener('scroll', updateCaret);
+document.addEventListener('selectionchange', updateCaret);
+input.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter' || event.isComposing || event.keyCode === 229) return;
+  const start = input.selectionStart;
+  const end = input.selectionEnd;
+  if (start === end && start > 0 && start < input.value.length) {
+    event.preventDefault();
+    input.setRangeText('\n', start, end, 'end');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    return;
+  }
+  event.preventDefault();
+  input.blur();
+});
+
+fontSlider.addEventListener('input', () => {
+  automaticFontSize = false;
+  fixedFontSize = Number(fontSlider.value);
+  updateDisplay();
+});
+autoSizeBtn.addEventListener('click', () => {
+  automaticFontSize = true;
+  updateDisplay();
+});
+
+function setTheme(theme, persist) {
+  const isDark = theme === 'dark';
+  document.body.dataset.theme = isDark ? 'dark' : 'light';
+  themeBtn.setAttribute('aria-label', isDark ? 'ライトモードに切り替え' : 'ダークモードに切り替え');
+  document.querySelector('meta[name="theme-color"]').content = isDark ? '#121212' : '#FFFFFF';
+  if (persist) {
+    try { localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light'); }
+    catch (error) { console.warn('テーマ設定を保存できませんでした。', error); }
+  }
+}
+
+try {
+  setTheme(localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light', false);
+} catch (error) {
+  console.warn('テーマ設定を読み込めませんでした。', error);
+  setTheme('light', false);
+}
+themeBtn.addEventListener('click', () => {
+  setTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark', true);
+});
 
 /* ═══════════════════════════════════════
    SWIPE (left only, text must be non-empty)
@@ -670,8 +972,9 @@ function commitCard() {
 }
 
 document.addEventListener('touchstart', (e) => {
-  if (isFocused) return;
   if (drawer.classList.contains('open')) return;
+  if (e.touches.length !== 1 || !(e.target instanceof Element) ||
+      e.target.closest('#text-controls, #history-btn, #theme-btn')) return;
   const t = e.touches[0];
   touchStartX = t.clientX;
   touchStartY = t.clientY;
@@ -679,7 +982,6 @@ document.addEventListener('touchstart', (e) => {
 }, { passive: true });
 
 document.addEventListener('touchmove', (e) => {
-  if (isFocused) return;
   if (drawer.classList.contains('open')) return;
   if (touchStartX === null) return;
 
@@ -690,7 +992,9 @@ document.addEventListener('touchmove', (e) => {
   if (!isSwiping) {
     if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
     if (Math.abs(dy) > Math.abs(dx) || dx > 0) {
-      touchStartX = null; return;      // vertical or rightward — ignore
+      touchStartX = null;
+      touchStartY = null;
+      return;
     }
     isSwiping = true;
   }
@@ -700,15 +1004,23 @@ document.addEventListener('touchmove', (e) => {
 }, { passive: false });
 
 document.addEventListener('touchend', () => {
-  if (!isSwiping) return;
-  const threshold = window.innerWidth * 0.35;
-  if (Math.abs(currentOffset) > threshold && input.value.trim()) {
+  if (!isSwiping) {
+    touchStartX = null;
+    touchStartY = null;
+    return;
+  }
+  if (currentOffset <= -90 && input.value.trim()) {
     commitCard();
   } else {
     resetCard(true);
   }
   touchStartX = null;
   touchStartY = null;
+}, { passive: true });
+document.addEventListener('touchcancel', () => {
+  touchStartX = null;
+  touchStartY = null;
+  if (isSwiping) resetCard(true);
 }, { passive: true });
 
 /* ═══════════════════════════════════════
@@ -837,6 +1149,14 @@ clearBtn.addEventListener('click', () => {
 ═══════════════════════════════════════ */
 updateDisplay();
 renderHistory();
+window.addEventListener('resize', updateDisplay);
+window.addEventListener('orientationchange', () => requestAnimationFrame(updateDisplay));
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', updateDisplay);
+}
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(updateDisplay);
+}
 
 /* ═══════════════════════════════════════
    SERVICE WORKER

@@ -1,5 +1,5 @@
 /* ことばのカード — Service Worker (minimal offline cache) */
-const CACHE_NAME = 'kotoba-card-v1';
+const CACHE_NAME = 'kotoba-card-v2';
 const ASSETS = [
   './',
   './index.html',
