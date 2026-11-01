@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="ことばのカード" />
+  <meta name="theme-color" content="#FFFFFF" />
+  <meta name="description" content="声が届きづらいとき、入力した文を大きく相手に見せるコミュニケーション補助アプリ" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet" />
+  <title>ことばのカード</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #fff;
+      font-family: "Noto Sans JP", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+      touch-action: none;
+    }
+
+    /* ── APP SHELL ── */
+    #app {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    /* ── CARD ── */
+    #card-wrap {
+      position: absolute;
+      inset: 0;
+      will-change: transform;
+      transition: transform 0.3s cubic-bezier(0.05,0.7,0.1,1);
+    }
+    #card-wrap.no-transition {
+      transition: none;
+    }
+    #card-wrap.fly-out {
+      transform: translateX(-110%) !important;
+      transition: transform 0.26s cubic-bezier(0.4,0,0.2,1) !important;
+    }
+
+    #card {
+      position: absolute;
+      inset: 12px;
+      border-radius: 28px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Text display area */
+    #display-area {
+      position: relative;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    /* The big visible text */
+    #display-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      padding: 40px 28px;
+      z-index: 1;
+    }
+    #display-text p {
+      margin: 0;
+      font-weight: 900;
+      color: #1c1c1c;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      word-break: break-word;
+      white-space: pre-wrap;
+      text-align: center;
+      transition: font-size 0.12s ease-out;
+      width: 100%;
+    }
+
+    /* Placeholder */
+    #placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 1;
+    }
+    #placeholder span {
+      font-size: 22px;
+      font-weight: 400;
+      color: #bdbdbd;
+      letter-spacing: 0.02em;
+      text-align: center;
+    }
+
+    /* The invisible textarea on top */
+    #input-area {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 16px; /* prevents iOS zoom */
+      resize: none;
+      cursor: text;
+      z-index: 2;
+      -webkit-appearance: none;
+      padding: 40px 28px;
+      font-family: "Noto Sans JP", sans-serif;
+    }
+
+    /* Swipe hint label */
+    #card-hint {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      z-index: 3;
+    }
+    #card-hint.visible {
+      opacity: 0.3;
+    }
+    #card-hint svg { display: block; }
+    #card-hint span {
+      font-size: 10px;
+      font-weight: 500;
+      color: #1c1c1c;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    /* ── SWIPE HINT (left edge indicator) ── */
+    #swipe-hint {
+      position: fixed;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+      transition: opacity 0.15s;
+    }
+    #swipe-hint.visible {
+      opacity: 1;
+    }
+    #swipe-hint .arrow {
+      color: #9e9e9e;
+      animation: hint-pulse 1.4s ease-in-out infinite;
+    }
+    #swipe-hint .bar {
+      width: 6px;
+      height: 40px;
+      border-radius: 3px;
+      background: rgba(100,100,100,0.35);
+      animation: hint-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes hint-pulse {
+      0%, 100% { opacity: 0.4; transform: translateX(0); }
+      50%       { opacity: 1;   transform: translateX(-4px); }
+    }
+
+    /* ── HISTORY BUTTON ── */
+    #history-btn {
+      position: fixed;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 1px 4px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(0,0,0,.06);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    #history-btn:active {
+      transform: translateY(-50%) scale(0.92);
+    }
+
+    #history-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 8px;
+      background: #424242;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 16px;
+      text-align: center;
+      padding: 0 4px;
+      display: none;
+      font-family: "Noto Sans JP", sans-serif;
+    }
+
+    /* ── DRAWER BACKDROP ── */
+    #drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.32);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      z-index: 30;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    #drawer-backdrop.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* ── DRAWER PANEL ── */
+    #drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(88vw, 340px);
+      height: 100%;
+      height: 100dvh;
+      background: #fafafa;
+      border-radius: 28px 0 0 28px;
+      box-shadow: -4px 0 24px rgba(0,0,0,.12);
+      z-index: 31;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.05,0.7,0.1,1);
+    }
+    #drawer.open {
+      transform: translateX(0);
+    }
+
+    /* Drawer header */
+    #drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 20px 12px;
+      border-bottom: 1px solid #eee;
+      flex-shrink: 0;
+    }
+    #drawer-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #drawer-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1c1c1c;
+      margin: 0;
+    }
+    #drawer-count-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: #757575;
+      background: #eee;
+      border-radius: 8px;
+      padding: 1px 7px;
+      display: none;
+    }
+    #drawer-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    #clear-all-btn {
+      font-size: 12px;
+      color: #9e9e9e;
+      padding: 6px 10px;
+      border-radius: 12px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-family: "Noto Sans JP", sans-serif;
+      font-weight: 500;
+      display: none;
+    }
+    #close-drawer-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: #eee;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Drawer list */
+    #drawer-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+      touch-action: pan-y;
+      scrollbar-width: thin;
+      scrollbar-color: #bdbdbd transparent;
+    }
+    #drawer-list::-webkit-scrollbar { width: 4px; }
+    #drawer-list::-webkit-scrollbar-track { background: transparent; }
+    #drawer-list::-webkit-scrollbar-thumb { background: #bdbdbd; border-radius: 2px; }
+
+    /* Empty state */
+    #drawer-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 12px;
+      padding: 32px;
+      text-align: center;
+    }
+    #drawer-empty span {
+      font-size: 14px;
+      color: #bdbdbd;
+      font-weight: 400;
+    }
+
+    /* History item */
+    .hist-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 12px;
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid #eee;
+      cursor: pointer;
+      touch-action: pan-y;
+      transition: background 0.1s;
+    }
+    .hist-item:active {
+      background: #f5f5f5;
+    }
+    .hist-item-text {
+      flex: 1;
+      min-width: 0;
+      text-align: left;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      font-family: "Noto Sans JP", sans-serif;
+    }
+    .hist-item-main {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1c1c1c;
+      line-height: 1.4;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      word-break: break-all;
+      margin: 0;
+    }
+    .hist-item-time {
+      font-size: 11px;
+      color: #9e9e9e;
+      margin-top: 2px;
+      display: block;
+    }
+    .hist-delete-btn {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #bdbdbd;
+      transition: background 0.1s, color 0.1s;
+    }
+    .hist-delete-btn:active {
+      background: #eee;
+      color: #757575;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Card wrapper (swipeable) -->
+  <div id="card-wrap">
+    <div id="card">
+      <div id="display-area">
+        <div id="placeholder"><span>ここに文を入力</span></div>
+        <div id="display-text"><p id="display-p"></p></div>
+        <textarea
+          id="input-area"
+          aria-label="メッセージ入力"
+          spellcheck="false"
+          autocorrect="off"
+          autocapitalize="none"
+        ></textarea>
+        <!-- bottom swipe hint -->
+        <div id="card-hint">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18l-6-6 6-6" stroke="#1c1c1c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>スワイプで新規</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Left-edge swipe hint -->
+  <div id="swipe-hint">
+    <div class="arrow">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="bar"></div>
+  </div>
+
+  <!-- History button -->
+  <button id="history-btn" aria-label="履歴を開く">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3" y="5"  width="14" height="2" rx="1" fill="#3d3d3d"/>
+      <rect x="3" y="11" width="18" height="2" rx="1" fill="#3d3d3d"/>
+      <rect x="3" y="17" width="10" height="2" rx="1" fill="#3d3d3d"/>
+    </svg>
+    <span id="history-badge"></span>
+  </button>
+
+  <!-- Drawer backdrop -->
+  <div id="drawer-backdrop"></div>
+
+  <!-- Drawer panel -->
+  <div id="drawer" role="dialog" aria-label="履歴">
+    <div id="drawer-header">
+      <div id="drawer-title-group">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3" y="5"  width="14" height="2" rx="1" fill="#3d3d3d"/>
+          <rect x="3" y="11" width="18" height="2" rx="1" fill="#3d3d3d"/>
+          <rect x="3" y="17" width="10" height="2" rx="1" fill="#3d3d3d"/>
+        </svg>
+        <p id="drawer-title">履歴</p>
+        <span id="drawer-count-badge"></span>
+      </div>
+      <div id="drawer-actions">
+        <button id="clear-all-btn">全消し</button>
+        <button id="close-drawer-btn" aria-label="閉じる">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="#3d3d3d" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="drawer-list">
+      <div id="drawer-empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="#dedede" stroke-width="1.5"/>
+          <path d="M12 7v5l3 3" stroke="#dedede" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>まだ履歴がありません</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+const STORAGE_KEY = 'voice-card-history';
+const MAX_HISTORY = 20;
+
+let history = loadHistory();
+let isFocused = false;
+
+/* ═══════════════════════════════════════
+   ELEMENTS
+═══════════════════════════════════════ */
+const cardWrap    = document.getElementById('card-wrap');
+const displayP    = document.getElementById('display-p');
+const placeholder = document.getElementById('placeholder');
+const cardHint    = document.getElementById('card-hint');
+const input       = document.getElementById('input-area');
+const swipeHint   = document.getElementById('swipe-hint');
+const histBtn     = document.getElementById('history-btn');
+const badge       = document.getElementById('history-badge');
+const backdrop    = document.getElementById('drawer-backdrop');
+const drawer      = document.getElementById('drawer');
+const countBadge  = document.getElementById('drawer-count-badge');
+const clearBtn    = document.getElementById('clear-all-btn');
+const closeBtn    = document.getElementById('close-drawer-btn');
+const drawerList  = document.getElementById('drawer-list');
+const emptyState  = document.getElementById('drawer-empty');
+
+/* ═══════════════════════════════════════
+   STORAGE
+═══════════════════════════════════════ */
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function saveHistory() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(history)); } catch {}
+}
+function pushHistory(text) {
+  const t = text.trim();
+  if (!t) return;
+  history = [
+    { id: Date.now(), text: t, at: new Date().toISOString() },
+    ...history.filter(h => h.text !== t)
+  ].slice(0, MAX_HISTORY);
+  saveHistory();
+  renderHistory();
+}
+
+/* ═══════════════════════════════════════
+   FONT SIZE (binary search)
+═══════════════════════════════════════ */
+const probe = document.createElement('div');
+probe.style.cssText = `
+  position:absolute; visibility:hidden; pointer-events:none;
+  white-space:pre-wrap; word-break:break-word;
+  font-family:"Noto Sans JP",sans-serif; font-weight:900;
+  line-height:1.2; padding:0;
+`;
+document.body.appendChild(probe);
+
+function fitFontSize(text) {
+  const card = document.getElementById('card');
+  const aw = card.clientWidth  - 56;
+  const ah = card.clientHeight - 80;
+  if (!text.trim()) return 80;
+
+  probe.style.width = aw + 'px';
+  let lo = 14, hi = 80, best = 14;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    probe.style.fontSize = mid + 'px';
+    probe.textContent = text;
+    if (probe.scrollHeight <= ah && probe.scrollWidth <= aw + 4) {
+      best = mid; lo = mid + 1;
+    } else { hi = mid - 1; }
+  }
+  return best;
+}
+
+/* ═══════════════════════════════════════
+   TEXT INPUT
+═══════════════════════════════════════ */
+function updateDisplay() {
+  const text = input.value;
+  const empty = !text.trim();
+
+  placeholder.style.display = empty ? 'flex' : 'none';
+  displayP.parentElement.style.display = empty ? 'none' : 'flex';
+  cardHint.classList.toggle('visible', !empty);
+
+  if (!empty) {
+    const fs = fitFontSize(text);
+    displayP.style.fontSize = fs + 'px';
+    displayP.textContent = text;
+  }
+}
+
+input.addEventListener('input', updateDisplay);
+input.addEventListener('focus', () => { isFocused = true; });
+input.addEventListener('blur',  () => { isFocused = false; });
+
+/* ═══════════════════════════════════════
+   SWIPE (left only, text must be non-empty)
+═══════════════════════════════════════ */
+let touchStartX = null, touchStartY = null;
+let isSwiping = false;
+let currentOffset = 0;
+
+function setOffset(x) {
+  currentOffset = x;
+  cardWrap.classList.add('no-transition');
+  cardWrap.style.transform = `translateX(${x}px)`;
+  swipeHint.classList.toggle('visible', x < -20);
+}
+
+function resetCard(animate) {
+  cardWrap.classList.toggle('no-transition', !animate);
+  if (animate) cardWrap.classList.remove('no-transition');
+  cardWrap.style.transform = 'translateX(0)';
+  swipeHint.classList.remove('visible');
+  isSwiping = false;
+  currentOffset = 0;
+}
+
+function commitCard() {
+  pushHistory(input.value);
+  input.value = '';
+  // fly out, then reset instantly off-screen, then slide back
+  cardWrap.classList.remove('no-transition');
+  cardWrap.classList.add('fly-out');
+  setTimeout(() => {
+    cardWrap.classList.remove('fly-out');
+    cardWrap.classList.add('no-transition');
+    cardWrap.style.transform = 'translateX(0)';
+    swipeHint.classList.remove('visible');
+    isSwiping = false;
+    currentOffset = 0;
+    updateDisplay();
+  }, 280);
+}
+
+document.addEventListener('touchstart', (e) => {
+  if (isFocused) return;
+  if (drawer.classList.contains('open')) return;
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+  isSwiping = false;
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+  if (isFocused) return;
+  if (drawer.classList.contains('open')) return;
+  if (touchStartX === null) return;
+
+  const t = e.touches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+
+  if (!isSwiping) {
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+    if (Math.abs(dy) > Math.abs(dx) || dx > 0) {
+      touchStartX = null; return;      // vertical or rightward — ignore
+    }
+    isSwiping = true;
+  }
+
+  e.preventDefault();
+  setOffset(Math.min(0, dx));
+}, { passive: false });
+
+document.addEventListener('touchend', () => {
+  if (!isSwiping) return;
+  const threshold = window.innerWidth * 0.35;
+  if (Math.abs(currentOffset) > threshold && input.value.trim()) {
+    commitCard();
+  } else {
+    resetCard(true);
+  }
+  touchStartX = null;
+  touchStartY = null;
+}, { passive: true });
+
+/* ═══════════════════════════════════════
+   DRAWER
+═══════════════════════════════════════ */
+function openDrawer() {
+  backdrop.classList.add('open');
+  drawer.classList.add('open');
+}
+function closeDrawer() {
+  backdrop.classList.remove('open');
+  drawer.classList.remove('open');
+}
+
+histBtn.addEventListener('click', openDrawer);
+backdrop.addEventListener('click', closeDrawer);
+closeBtn.addEventListener('click', closeDrawer);
+
+// Swipe-right on drawer to close
+let drawerTouchX = null;
+drawer.addEventListener('touchstart', (e) => {
+  drawerTouchX = e.touches[0].clientX;
+}, { passive: true });
+drawer.addEventListener('touchend', (e) => {
+  if (drawerTouchX === null) return;
+  if (e.changedTouches[0].clientX - drawerTouchX > 60) closeDrawer();
+  drawerTouchX = null;
+}, { passive: true });
+
+/* ═══════════════════════════════════════
+   HISTORY RENDERING
+═══════════════════════════════════════ */
+function formatRelTime(iso) {
+  try {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    const h = Math.floor(diff / 3600000);
+    const d = Math.floor(diff / 86400000);
+    if (m < 1)  return 'たった今';
+    if (m < 60) return `${m}分前`;
+    if (h < 24) return `${h}時間前`;
+    if (d < 7)  return `${d}日前`;
+    const dt = new Date(iso);
+    return `${dt.getMonth()+1}/${dt.getDate()}`;
+  } catch { return ''; }
+}
+
+function renderHistory() {
+  // Badge on main button
+  if (history.length > 0) {
+    badge.style.display = 'block';
+    badge.textContent = history.length > 9 ? '9+' : String(history.length);
+  } else {
+    badge.style.display = 'none';
+  }
+
+  // Drawer header
+  if (history.length > 0) {
+    countBadge.style.display = 'inline';
+    countBadge.textContent = String(history.length);
+    clearBtn.style.display = 'inline';
+  } else {
+    countBadge.style.display = 'none';
+    clearBtn.style.display = 'none';
+  }
+
+  // List
+  // Remove all item nodes (keep empty state)
+  [...drawerList.querySelectorAll('.hist-item')].forEach(el => el.remove());
+
+  if (history.length === 0) {
+    emptyState.style.display = 'flex';
+    return;
+  }
+  emptyState.style.display = 'none';
+
+  const frag = document.createDocumentFragment();
+  history.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'hist-item';
+    el.dataset.id = item.id;
+    el.innerHTML = `
+      <button class="hist-item-text" aria-label="${item.text}を呼び出す">
+        <p class="hist-item-main"></p>
+        <span class="hist-item-time"></span>
+      </button>
+      <button class="hist-delete-btn" aria-label="削除">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
+            stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    `;
+    // Set text safely (avoid XSS)
+    el.querySelector('.hist-item-main').textContent = item.text;
+    el.querySelector('.hist-item-time').textContent = formatRelTime(item.at);
+
+    // Recall
+    el.querySelector('.hist-item-text').addEventListener('click', () => {
+      input.value = item.text;
+      updateDisplay();
+      closeDrawer();
+    });
+    // Delete
+    el.querySelector('.hist-delete-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      history = history.filter(h => h.id !== item.id);
+      saveHistory();
+      renderHistory();
+    });
+
+    frag.appendChild(el);
+  });
+  drawerList.insertBefore(frag, emptyState);
+}
+
+clearBtn.addEventListener('click', () => {
+  history = [];
+  saveHistory();
+  renderHistory();
+});
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+updateDisplay();
+renderHistory();
+
+/* ═══════════════════════════════════════
+   SERVICE WORKER
+═══════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
